@@ -57,6 +57,9 @@ test-unit:
 
 .PHONY: test-e2e
 test-e2e:
+	curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl
+	sudo mv kubectl /usr/bin
+	chmod +x /usr/bin/kubectl
 	./scripts/providers/kubernetes.sh start
 ifdef PARALLEL
 	go test -parallel=$(PARALLEL) -v github.com/kedgeproject/kedge/tests/e2e
