@@ -4,7 +4,7 @@ language: go
 # make it work for forks
 go_import_path: github.com/kedgeproject/kedge
 
-
+sudo: required
 
 matrix:
   include:
