@@ -57,7 +57,7 @@ test-unit:
 
 .PHONY: test-e2e
 test-e2e:
-
+	./scripts/providers/kubernetes.sh
 ifdef PARALLEL
 	go test -parallel=$(PARALLEL) -v github.com/kedgeproject/kedge/tests/e2e
 else
