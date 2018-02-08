@@ -7,6 +7,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	
+	osv1 "github.com/openshift/api/build/v1"
+	buildv1 "github.com/openshift/client-go/build/clientset/versioned/typed/build/v1"
 )
 
 func waitForBuildComplete(namespace string, buildName string) error {
@@ -35,6 +38,27 @@ func runKedgeS2i(imageName string, baseImage string) error {
 
 // TODO: Use OpenShift client-go API instead of go-template
 func Test_os_Integration(t *testing.T) {
+        
+	
+	var kubeconfig *string
+	if home := homeDir(); home != "" {
+	   	kubeconfig = flag.String("kubeconfig", filepath.Join(home, ".kube", "config"), "(optional) absolute path to the kubeconfig file")
+	} else {
+		kubeconfig = flag.String("kubeconfig", "", "absolute path to the kubeconfig file")
+	}
+	flag.Parse()
+
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	if err != nil {
+	       panic(err)
+	}
+
+	buildV1Client, err := buildv1.NewForConfig(config)
+	if err != nil {
+	       panic(err)
+	}
+
 	clientset, err := createClient()
 	if err != nil {
 		t.Fatalf("error getting kube client: %v", err)
@@ -115,12 +139,14 @@ func Test_os_Integration(t *testing.T) {
 			if (test.Type == "buildconfig") || (test.Type == "s2i") {
 				listBuilds, err := runCmd("oc get build --namespace=" + test.Namespace +
 					" --template='{{range .items}}{{ .metadata.name }}:{{end}}' | tr \":\" \"\n\"")
+
+				listBuilds, err := buildV1Client.Builds(test.Namespace).List(metav1.ListOptions{})
 				if err != nil {
 					t.Fatalf("error getting the Build list: %v", err)
 				}
 
-				eachBuild := strings.Split(string(listBuilds), "\n")
-				for _, build := range eachBuild {
+				// eachBuild := strings.Split(string(listBuilds), "\n")
+				for _, build := range listBuilds.items {
 					if len(build) > 0 {
 						err := waitForBuildComplete(test.Namespace, build)
 						if err != nil {
